@@ -1,14 +1,15 @@
 /**
   @file voile_errorno.h
- 
+  @brief An implementation of the errno for voile-library
   @details 
 
-  To use, include voile_error.h, and compile and link voile_error.c.
-
+  To use, copy voile_errorno.h, src/voile_errorno.c and depends libries, creat voile_conf.h for defining micro. Then include voile_error.h, and compile and link all .c file.
+  
+  @depends
+  [voile_common](https://github.com/Jimmy39/voile-common)
   @author Jimmy Wang
-  @brief An implementation of the errno for voile-library
-  @version alpha-20240223
-  @todo Add example
+  @version alpha-20240226
+  @todo Add example and some comment
 
   @license MIT License
 
@@ -36,9 +37,13 @@
 #define __VOILE_ERRORNO_H__
 
 #include "voile_common.h"
+#ifdef __VOILE_ERRORNO_CONF
+#include "voile_errorno_conf.h"
+#endif  // __VOILE_ERRORNO_CONF
 
 /**
-  @brief Define error number
+ * @brief Define error number
+ *
  */
 typedef enum {
 
@@ -51,59 +56,84 @@ typedef enum {
     /// Function is called with incorrect parameters
     inputRangeError = 2,
 
-    /// You are using a feature not supported by the hardware, or configuration in `devicelist.h` is uncorrect
-    hardwareUnsupportedError = 3
+    /// You are using a feature not supported by hardware
+    hardwareUnsupportedError = 3,
 
-} Verrorno_t;
+    /// There are invalid parameters in the configuration of devicelist.h
+    configError = 4
 
-#ifndef __VOILE_DISABLE_DEBUG
+} voile_errorno_t;
+
 /**
-  @brief Storage error number, Disabled by ```__VOILE_DISABLE_DEBUG```
+ * @brief Storage error number, disabled by ```__VOILE_DISABLE_DEBUG```
+ *
  */
-extern Verrorno_t Verrorno;
+#ifndef __VOILE_DISABLE_DEBUG
+extern voile_errorno_t Verrorno;
 #endif
 
 /**
-  @brief Set ```Verrorno``` value, can be ignored by ```__VOILE_DISABLE_DEBUG```
+ * @brief Set ```Verrorno``` value, can be ignored by ```__VOILE_DISABLE_DEBUG```
+ *
  */
 #ifndef __VOILE_DISABLE_DEBUG
-#define microVsetErrorno(no) Verrorno = no
+#define microVerrorno_set(no) (Verrorno = no)
 #else
-#define microVsetErrorno(no)
+#define microVerrorno_set(no)
 #endif
 
 /**
-  @brief Get ```Verrorno``` value, can be ignored by ```__VOILE_DISABLE_DEBUG```
+ * @brief Get ```Verrorno``` value, can be ignored by ```__VOILE_DISABLE_DEBUG```
+ *
  */
 #ifndef __VOILE_DISABLE_DEBUG
-#define microVgetErrorno() Verrorno
+#define microVerrorno_get() Verrorno
 #else
-#define microVgetErrorno()
+#define microVerrorno_get() success
 #endif
 
 /**
-  @brief Define microValart(message) in `divicelist.h` to use alart output
+ * @brief Define microVerrorno_alart(message) to use alart output
+ *
  */
-#ifndef microValart
-#define microValart(message)
-#endif  // !microValart
+#ifndef microVerrorno_alart
+#define microVerrorno_alart(message)
+#endif
 
 /**
-  @brief Trigger an error
+ * @brief Trigger an error
+ *
  */
-#define microVerror(no, message) \
-    do {                         \
-        microVsetErrorno(no);    \
-        microValart(message);    \
+#define microVerrorno_error(no, message) \
+    do {                                 \
+        microVerrorno_set(no);           \
+        microVerrorno_alart(message);    \
     } while (0)
 
 /**
-  @brief Alart warning, can be ignored by ```__VOILE_IGNORE_WARNING```
+ * @brief Alart warning, can be ignored by ```__VOILE_IGNORE_WARNING```
+ *
  */
 #ifndef __VOILE_IGNORE_WARNING
-#define microVwarning(message) microValart(message)
-#else   // !__VOILE_IGNORE_WARNING
-#define microwarning(no, message)
-#endif  // __VOILE_IGNORE_WARNING
+#define microVerrorno_warning(message) microVerrorno_alart(message)
+#else
+#define microVerrorno_warning(message)
+#endif
+
+/**
+ * @brief Cheak input value, can be ignored by ```__VOILE_DISABLE_DEBUG```
+ * 
+ */
+#ifndef __VOILE_DISABLE_DEBUG
+#define microVerrorno_cheakInput(conditions, message) \
+    do {                                              \
+        if (!conditions) {                            \
+            microVerrorno_set(inputRangeError);       \
+            microVerrorno_alart(message);             \
+        }                                             \
+    } while (0)
+#else
+#define microVerrorno_cheakInput(conditions, message)
+#endif
 
 #endif  // !__VOILE_ERRORNO_H__
